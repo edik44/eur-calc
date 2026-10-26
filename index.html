@@ -1,0 +1,734 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Калькулятор обмена EUR</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Обмен EUR">
+<meta name="theme-color" content="#EDF1EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1411" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Unbounded:wght@600&display=swap">
+<style>
+/* Layout: one narrow phone-first column. Inputs sit in quiet cards; the answer is an exchange-office rate board. */
+:root {
+  --bg: #EDF1EF;
+  --surface: #FFFFFF;
+  --ink: #13201A;
+  --muted: #5A6A63;
+  --line: #D3DCD8;
+  --accent: #1E5C8A;
+  --accent-ink: #FFFFFF;
+  --loss: #B03A2A;
+  --gain: #2A7744;
+  --board-bg: #111A16;
+  --board-fg: #F3C24F;
+  --board-text: #E2EAE6;
+  --board-dim: #8DA198;
+  --board-line: #26332D;
+  --board-dot: rgba(243, 194, 79, .07);
+  --board-loss: #FF8B76;
+  --board-gain: #7FD99A;
+  --f-display: "Unbounded", "Golos Text", system-ui, sans-serif;
+  --f-body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-num: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1411;
+    --surface: #151F1B;
+    --ink: #E3ECE7;
+    --muted: #93A49C;
+    --line: #26342E;
+    --accent: #79B0DE;
+    --accent-ink: #0D1411;
+    --loss: #F07C69;
+    --gain: #6DC58C;
+    --board-bg: #060A08;
+    --board-fg: #F6C95C;
+    --board-text: #E4ECE8;
+    --board-dim: #7E9389;
+    --board-line: #1E2925;
+    --board-dot: rgba(246, 201, 92, .06);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1411;
+  --surface: #151F1B;
+  --ink: #E3ECE7;
+  --muted: #93A49C;
+  --line: #26342E;
+  --accent: #79B0DE;
+  --accent-ink: #0D1411;
+  --loss: #F07C69;
+  --gain: #6DC58C;
+  --board-bg: #060A08;
+  --board-fg: #F6C95C;
+  --board-text: #E4ECE8;
+  --board-dim: #7E9389;
+  --board-line: #1E2925;
+  --board-dot: rgba(246, 201, 92, .06);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.45 var(--f-body);
+  -webkit-text-size-adjust: 100%;
+}
+.wrap {
+  max-width: 540px;
+  margin: 0 auto;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+header { display: grid; gap: 6px; padding-block: 4px 6px; }
+.eyebrow {
+  margin: 0;
+  font: 500 12px/1 var(--f-num);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+h1 {
+  margin: 0;
+  font: 600 clamp(22px, 6.2vw, 28px)/1.15 var(--f-display);
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+.lead { margin: 0; color: var(--muted); font-size: 15px; max-width: 60ch; }
+.note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 8px; flex-wrap: wrap; }
+h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; text-wrap: balance; }
+.step {
+  font: 500 12px/1 var(--f-num);
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.group { display: grid; gap: 6px; }
+label { font-size: 14px; font-weight: 500; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+
+.field {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.field:has(input[aria-invalid="true"]) { border-color: var(--loss); }
+.field input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 500 20px/1.2 var(--f-num);
+  font-variant-numeric: tabular-nums;
+  padding: 12px;
+  outline: none;
+}
+.field input[aria-invalid="true"] { color: var(--loss); }
+.unit { padding-right: 12px; font-size: 14px; color: var(--muted); white-space: nowrap; }
+
+.row { display: flex; gap: 8px; align-items: stretch; }
+.btn {
+  flex: none;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 15px/1 var(--f-body);
+  cursor: pointer;
+}
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn:focus-visible, .seg button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.seg button {
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 8px;
+  background: transparent;
+  color: var(--muted);
+  font: 500 14px/1.2 var(--f-body);
+  cursor: pointer;
+}
+.seg button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+.status { margin: 0; font-size: 13px; color: var(--muted); }
+.status.warn { color: var(--loss); }
+.status a { color: var(--accent); }
+
+.board {
+  background-color: var(--board-bg);
+  background-image: radial-gradient(var(--board-dot) 1px, transparent 1.5px);
+  background-size: 6px 6px;
+  color: var(--board-text);
+  border-radius: var(--radius);
+  padding: 18px 16px 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.verdict {
+  margin: 0;
+  font: 500 12px/1.3 var(--f-num);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--board-dim);
+}
+.big {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font: 700 clamp(44px, 13vw, 60px)/1 var(--f-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+  color: var(--board-fg);
+}
+.big-unit { font-size: .5em; font-weight: 500; }
+.board.empty .big { color: var(--board-dim); }
+.board.loss .big { color: var(--board-loss); }
+.board.gain .big { color: var(--board-gain); }
+.breakeven {
+  margin: 12px 0 0;
+  padding: 12px;
+  border: 1px solid var(--board-line);
+  border-radius: 10px;
+  display: grid;
+  gap: 2px;
+}
+.be-label { margin: 0; font-size: 13px; color: var(--board-dim); }
+.be-val {
+  margin: 0;
+  font: 700 28px/1.15 var(--f-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--board-fg);
+}
+.be-note { margin: 0; font: 500 14px/1.4 var(--f-num); }
+.big-sub { margin: 0; font-size: 15px; }
+.big-meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font: 500 14px/1.4 var(--f-num);
+  color: var(--board-dim);
+}
+.paths { margin: 12px 0 0; border-top: 1px solid var(--board-line); }
+.path { display: grid; gap: 2px; padding-block: 10px; border-bottom: 1px solid var(--board-line); }
+.path:last-child { border-bottom: 0; }
+.path dt { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--board-dim); }
+.path dd {
+  margin: 0;
+  font: 500 15px/1.4 var(--f-num);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.path dd b { font-weight: 700; color: var(--board-text); }
+.tag {
+  display: none;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--board-fg);
+  color: var(--board-bg);
+  font: 600 11px/1 var(--f-num);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.path.best .tag { display: inline-block; }
+
+.scale { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.srow { display: grid; gap: 4px; }
+.srow-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.srow-name { font-weight: 600; }
+.srow-val { font: 700 18px/1.2 var(--f-num); font-variant-numeric: tabular-nums; }
+.srow.ref .srow-val { color: var(--accent); }
+.srow-sub { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2px 12px; font-size: 13px; color: var(--muted); }
+.delta { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.delta.loss { color: var(--loss); }
+.delta.gain { color: var(--gain); }
+.bar { height: 4px; border-radius: 2px; background: var(--bg); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 2px; background: var(--loss); transition: width .25s; }
+.bar i.gain { background: var(--gain); }
+.even { margin: 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+.even b { font-family: var(--f-num); font-weight: 600; white-space: nowrap; }
+
+.how { display: block; }
+.how summary { cursor: pointer; font-weight: 600; }
+.how ul { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; }
+.how code {
+  font: 500 13px/1.5 var(--f-num);
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 5px;
+  overflow-wrap: anywhere;
+}
+.foot { margin: 4px 0 0; font-size: 12px; color: var(--muted); text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">EUR → USD → RUB · EUR → RUB</p>
+    <h1>Калькулятор обмена EUR</h1>
+    <p class="lead">Сколько евро вы теряете между обменом через доллар и прямым обменом евро на рубли.</p>
+  </header>
+
+  <p class="note" id="exampleNote">Поля заполнены примером. Введите свои курсы, и они сохранятся на этом устройстве.</p>
+
+  <section class="card">
+    <div class="group">
+      <label for="amount">Сумма обмена</label>
+      <div class="field">
+        <input id="amount" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" enterkeyhint="next">
+        <span class="unit">€</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Биржевой курс EUR/USD</h2>
+      <span class="step">эталон</span>
+    </div>
+    <div class="seg" role="group" aria-label="Источник курса">
+      <button type="button" data-src="usdt" aria-pressed="true">USDT · Binance</button>
+      <button type="button" data-src="forex" aria-pressed="false">Forex · ЕЦБ</button>
+    </div>
+    <div class="row">
+      <div class="field">
+        <input id="bench" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-describedby="benchStatus" aria-label="Биржевой курс EUR/USD">
+        <span class="unit">$ за 1 €</span>
+      </div>
+      <button type="button" class="btn" id="refresh">Обновить</button>
+    </div>
+    <p class="status" id="benchStatus" aria-live="polite"></p>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Цепочка 1: через доллар</h2>
+      <span class="step">2 обмена</span>
+    </div>
+    <div class="group">
+      <label for="eurusd">Обменник EUR → USD</label>
+      <div class="field">
+        <input id="eurusd" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" enterkeyhint="next">
+        <span class="unit">$ за 1 €</span>
+      </div>
+      <p class="hint">Сколько долларов дают за 1 евро.</p>
+    </div>
+    <div class="group">
+      <label for="usdrub">Обменник РФ, USD → RUB</label>
+      <div class="field">
+        <input id="usdrub" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" enterkeyhint="next">
+        <span class="unit">₽ за 1 $</span>
+      </div>
+      <p class="hint">Курс покупки доллара обменником.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Цепочка 2: напрямую</h2>
+      <span class="step">1 обмен</span>
+    </div>
+    <div class="group">
+      <label for="eurrub">Обменник РФ, EUR → RUB</label>
+      <div class="field">
+        <input id="eurrub" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" enterkeyhint="done">
+        <span class="unit">₽ за 1 €</span>
+      </div>
+      <p class="hint">Курс покупки евро обменником.</p>
+    </div>
+  </section>
+
+  <section class="board" id="board" aria-live="polite">
+    <p class="verdict" id="verdict">Выгоднее напрямую</p>
+    <p class="big"><span id="bigNum">—</span><span class="big-unit">€</span></p>
+    <p class="big-sub" id="bigSub"></p>
+    <p class="big-meta"><span id="pct"></span><span id="rubDiff"></span></p>
+    <div class="breakeven">
+      <p class="be-label">Безубыточный курс USD → RUB</p>
+      <p class="be-val"><span id="beRate">—</span> ₽</p>
+      <p class="be-note" id="beNote"></p>
+    </div>
+    <dl class="paths">
+      <div class="path" id="path1">
+        <dt>Через доллар <span class="tag">выгоднее</span></dt>
+        <dd id="p1">—</dd>
+      </div>
+      <div class="path" id="path2">
+        <dt>Напрямую <span class="tag">выгоднее</span></dt>
+        <dd id="p2">—</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>Ваш фактический курс EUR/USD</h2>
+    <p class="hint">Обе цепочки на одной шкале: сколько долларов вы по сути получаете за 1 евро и сколько это от биржевого курса.</p>
+    <ul class="scale" id="scale"></ul>
+    <p class="even" id="even"></p>
+  </section>
+
+  <details class="card how">
+    <summary>Как считается</summary>
+    <ul>
+      <li>Через доллар: <code>₽ = Сумма × (EUR→USD) × (USD→RUB)</code></li>
+      <li>Напрямую: <code>₽ = Сумма × (EUR→RUB)</code></li>
+      <li>Результат цепочки через доллар: <code>€ = Сумма × (₽ через доллар ÷ ₽ напрямую − 1)</code>. Минус означает убыток, плюс означает выгоду по сравнению с прямым обменом.</li>
+      <li>Безубыточный курс USD→RUB: <code>EUR→RUB ÷ EUR→USD</code>. При таком курсе обе цепочки дают одинаково рублей.</li>
+      <li>Фактический курс прямого обмена: <code>EUR→RUB ÷ USD→RUB</code>. Столько долларов вы как бы получаете за 1 евро.</li>
+      <li>Потери к бирже: <code>€ = Сумма × (1 − фактический курс ÷ биржевой)</code></li>
+      <li>Вводите курсы покупки обменника: по ним обменник покупает у вас валюту.</li>
+    </ul>
+  </details>
+
+  <p class="foot">Курсы хранятся только на этом устройстве.</p>
+</main>
+
+<script>
+(() => {
+  const KEY = 'eur-chain-calc.v1';
+  const FIELDS = ['amount', 'bench', 'eurusd', 'usdrub', 'eurrub'];
+  const EXAMPLE = { amount: '1000', bench: '1,1200', eurusd: '1,0900', usdrub: '81,00', eurrub: '89,50' };
+  const SOURCES = {
+    usdt: {
+      linkName: 'Binance',
+      link: 'https://www.binance.com/ru/trade/EUR_USDT',
+      tries: [
+        { label: 'Binance EUR/USDT', url: 'https://api.binance.com/api/v3/ticker/price?symbol=EURUSDT', pick: (j) => Number(j.price) },
+        { label: 'Binance EUR/USDT', url: 'https://data-api.binance.vision/api/v3/ticker/price?symbol=EURUSDT', pick: (j) => Number(j.price) },
+        { label: 'CoinGecko USDT/EUR', url: 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=eur', pick: (j) => 1 / j.tether.eur },
+      ],
+    },
+    forex: {
+      linkName: 'TradingView',
+      link: 'https://www.tradingview.com/symbols/EURUSD/',
+      tries: [
+        { label: 'ЕЦБ (Frankfurter)', url: 'https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD', pick: (j) => j.rates.USD },
+        { label: 'ЕЦБ (Frankfurter)', url: 'https://api.frankfurter.app/latest?from=EUR&to=USD', pick: (j) => j.rates.USD },
+        { label: 'ExchangeRate-API', url: 'https://open.er-api.com/v6/latest/EUR', pick: (j) => j.rates.USD },
+      ],
+    },
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const formats = {};
+  const fmt = (n, d) => (formats[d] ||= new Intl.NumberFormat('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d })).format(n);
+  const num = (s) => {
+    const n = Number(String(s ?? '').replace(/[\s ]/g, '').replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? n : NaN;
+  };
+
+  let state = { ...EXAMPLE, src: 'usdt', benchInfo: null, touched: false };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved && typeof saved === 'object') state = { ...state, ...saved };
+  } catch (e) {}
+  if (!SOURCES[state.src]) state.src = 'usdt';
+  const save = () => {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  };
+
+  function render() {
+    const v = Object.fromEntries(FIELDS.map((f) => [f, num(state[f])]));
+    FIELDS.forEach((f) => {
+      const raw = String(state[f] ?? '').trim();
+      $(f).setAttribute('aria-invalid', String(raw !== '' && Number.isNaN(v[f])));
+    });
+    $('exampleNote').hidden = state.touched;
+
+    const { amount: A, eurusd: K, usdrub: U, eurrub: E } = v;
+    const board = $('board');
+    if ([A, K, U, E].some(Number.isNaN)) {
+      board.classList.add('empty');
+      board.classList.remove('loss', 'gain');
+      $('verdict').textContent = 'Введите сумму и три курса обменников';
+      $('bigNum').textContent = '—';
+      $('beRate').textContent = '—';
+      ['bigSub', 'pct', 'rubDiff', 'beNote'].forEach((id) => { $(id).textContent = ''; });
+      $('p1').textContent = '—';
+      $('p2').textContent = '—';
+      $('path1').classList.remove('best');
+      $('path2').classList.remove('best');
+      renderScale(v);
+      return;
+    }
+    board.classList.remove('empty');
+
+    const usd = A * K;
+    const r1 = usd * U;
+    const r2 = A * E;
+    // Result of the USD chain measured against the direct exchange: minus is a loss, plus a gain.
+    const rel = r1 / r2 - 1;
+    const equal = Math.abs(rel) < 0.00005;
+    const sign = equal ? '' : rel < 0 ? '−' : '+';
+    board.classList.toggle('loss', !equal && rel < 0);
+    board.classList.toggle('gain', !equal && rel > 0);
+
+    if (equal) {
+      $('verdict').textContent = 'Цепочки равны';
+      $('bigSub').textContent = 'через доллар и напрямую получается одинаково';
+    } else if (rel < 0) {
+      $('verdict').textContent = 'Выгоднее напрямую EUR → RUB';
+      $('bigSub').textContent = 'убыток, если менять через доллар';
+    } else {
+      $('verdict').textContent = 'Выгоднее через доллар';
+      $('bigSub').textContent = 'выгода, если менять через доллар';
+    }
+    $('bigNum').textContent = sign + fmt(Math.abs(A * rel), 2);
+    $('pct').textContent = sign + fmt(Math.abs(rel) * 100, 2) + ' %';
+    $('rubDiff').textContent = sign + fmt(Math.abs(r1 - r2), 0) + ' ₽';
+
+    // USD→RUB rate at which the USD chain gives exactly as many rubles as the direct exchange.
+    const breakEven = E / K;
+    const gap = breakEven - U;
+    $('beRate').textContent = fmt(breakEven, 2);
+    if (Math.abs(gap) < 0.005) $('beNote').textContent = `сейчас ${fmt(U, 2)} ₽, цепочки равны`;
+    else if (gap > 0) $('beNote').textContent = `сейчас ${fmt(U, 2)} ₽, не хватает ${fmt(gap, 2)} ₽`;
+    else $('beNote').textContent = `сейчас ${fmt(U, 2)} ₽, это на ${fmt(-gap, 2)} ₽ выше`;
+
+    const a = fmt(A, A % 1 ? 2 : 0);
+    $('p1').innerHTML = `${a} € → ${fmt(usd, 2)} $ → <b>${fmt(r1, 0)} ₽</b>`;
+    $('p2').innerHTML = `${a} € → <b>${fmt(r2, 0)} ₽</b>`;
+    $('path1').classList.toggle('best', !equal && rel > 0);
+    $('path2').classList.toggle('best', !equal && rel < 0);
+
+    renderScale(v);
+  }
+
+  function renderScale({ amount: A, bench: B, eurusd: K, usdrub: U, eurrub: E }) {
+    const rows = [];
+    if (!Number.isNaN(B)) rows.push({ name: 'Биржа', note: 'эталон', v: B, ref: true });
+    if (!Number.isNaN(E) && !Number.isNaN(U)) rows.push({ name: 'Напрямую', note: 'EUR→RUB ÷ USD→RUB', v: E / U });
+    if (!Number.isNaN(K)) rows.push({ name: 'Через доллар', note: 'обменник EUR→USD', v: K });
+    rows.sort((x, y) => y.v - x.v);
+
+    const deltas = rows.map((r) => (Number.isNaN(B) || r.ref ? NaN : r.v / B - 1));
+    const maxAbs = Math.max(0.0001, ...deltas.filter(Number.isFinite).map(Math.abs));
+
+    const list = $('scale');
+    list.textContent = '';
+    rows.forEach((r, i) => {
+      const d = deltas[i];
+      const li = document.createElement('li');
+      li.className = 'srow' + (r.ref ? ' ref' : '');
+      let deltaHtml = '';
+      let barHtml = '';
+      if (Number.isFinite(d)) {
+        const cls = d < 0 ? 'loss' : 'gain';
+        const sign = d < 0 ? '−' : '+';
+        const eur = Number.isNaN(A) ? '' : ` · ${sign}${fmt(Math.abs(A * d), 2)} €`;
+        deltaHtml = `<span class="delta ${cls}">${sign}${fmt(Math.abs(d) * 100, 2)} %${eur}</span>`;
+        barHtml = `<div class="bar"><i class="${cls}" style="width:${(Math.abs(d) / maxAbs) * 100}%"></i></div>`;
+      } else if (!r.ref) {
+        deltaHtml = '<span class="delta">нет эталона</span>';
+      }
+      li.innerHTML =
+        `<div class="srow-head"><span class="srow-name">${r.name}</span><span class="srow-val">${fmt(r.v, 4)}</span></div>` +
+        `<div class="srow-sub"><span>${r.note}</span>${deltaHtml}</div>` + barHtml;
+      list.append(li);
+    });
+    if (!rows.length) {
+      const li = document.createElement('li');
+      li.className = 'hint';
+      li.textContent = 'Введите курсы, чтобы увидеть шкалу.';
+      list.append(li);
+    }
+
+    const even = $('even');
+    if ([K, U, E].some(Number.isNaN)) {
+      even.hidden = true;
+    } else {
+      even.hidden = false;
+      even.innerHTML =
+        `Цепочки сравняются, если изменится один курс, а остальные останутся прежними: USD→RUB до <b>${fmt(E / K, 2)} ₽</b>, ` +
+        `EUR→USD до <b>${fmt(E / U, 4)} $</b> или EUR→RUB до <b>${fmt(K * U, 2)} ₽</b>.`;
+    }
+  }
+
+  function timeText(t) {
+    const d = new Date(t);
+    const hm = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === new Date().toDateString()) return 'сегодня в ' + hm;
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ', ' + hm;
+  }
+
+  function renderStatus(mode) {
+    const el = $('benchStatus');
+    const src = SOURCES[state.src];
+    const info = state.benchInfo;
+    el.className = 'status' + (mode === 'failed' ? ' warn' : '');
+    if (mode === 'loading') {
+      el.textContent = 'Загружаю курс…';
+      return;
+    }
+    let text;
+    if (mode === 'failed') {
+      text = 'Автозагрузка не сработала.';
+      if (info && info.kind === 'live') text += ` Показан курс ${info.label}, ${timeText(info.time)}.`;
+      else if (info && info.kind === 'manual') text += ' Используется курс, введённый вручную.';
+      else text += ' Введите курс вручную.';
+    } else if (info && info.kind === 'live') {
+      text = `${info.label}, ${timeText(info.time)}.`;
+    } else if (info && info.kind === 'manual') {
+      text = 'Введён вручную.';
+    } else {
+      text = 'Пример. Нажмите «Обновить» или введите курс.';
+    }
+    el.textContent = text + ' ';
+    const a = document.createElement('a');
+    a.href = src.link;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = 'Открыть ' + src.linkName;
+    el.append(a);
+  }
+
+  async function getJSON(url) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  let request = 0;
+  async function refreshBench() {
+    const id = ++request;
+    const btn = $('refresh');
+    btn.disabled = true;
+    renderStatus('loading');
+    let ok = false;
+    for (const t of SOURCES[state.src].tries) {
+      let v = NaN;
+      try { v = t.pick(await getJSON(t.url)); } catch (e) {}
+      if (id !== request) break;
+      if (Number.isFinite(v) && v > 0.5 && v < 3) {
+        state.bench = fmt(v, 4);
+        state.benchInfo = { kind: 'live', label: t.label, time: Date.now() };
+        $('bench').value = state.bench;
+        save();
+        render();
+        ok = true;
+        break;
+      }
+    }
+    if (id !== request) return;
+    btn.disabled = false;
+    renderStatus(ok ? undefined : 'failed');
+  }
+
+  FIELDS.forEach((f, i) => {
+    const el = $(f);
+    el.value = state[f] ?? '';
+    el.addEventListener('input', () => {
+      state[f] = el.value;
+      state.touched = true;
+      if (f === 'bench') {
+        request++;
+        $('refresh').disabled = false;
+        state.benchInfo = { kind: 'manual', time: Date.now() };
+        renderStatus();
+      }
+      save();
+      render();
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const next = FIELDS[i + 1];
+      if (next) $(next).focus();
+      else el.blur();
+    });
+  });
+
+  const paintSource = () => {
+    document.querySelectorAll('[data-src]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.src === state.src)));
+  };
+  document.querySelectorAll('[data-src]').forEach((b) => {
+    b.addEventListener('click', () => {
+      if (state.src === b.dataset.src) return;
+      state.src = b.dataset.src;
+      save();
+      paintSource();
+      refreshBench();
+    });
+  });
+  $('refresh').addEventListener('click', refreshBench);
+
+  paintSource();
+  render();
+  renderStatus();
+  refreshBench();
+})();
+</script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
